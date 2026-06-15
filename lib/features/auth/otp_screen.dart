@@ -1,0 +1,232 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../app/router/routes.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/extensions/context_ext.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/widgets/widgets.dart';
+import '../../services/accounts/account_session.dart';
+import '../../services/notifications/otp_notification_service.dart';
+import 'application/auth_controller.dart';
+
+/// OTP verification (Stitch `verification_code`). 6-digit boxed input, a resend
+/// countdown and a local notification that delivers the mock SMS code.
+class OtpScreen extends ConsumerStatefulWidget {
+  const OtpScreen({super.key});
+
+  @override
+  ConsumerState<OtpScreen> createState() => _OtpScreenState();
+}
+
+class _OtpScreenState extends ConsumerState<OtpScreen> {
+  static const _resendSeconds = 59;
+  Timer? _timer;
+  int _remaining = _resendSeconds;
+  bool _error = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startCountdown();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdown() {
+    _timer?.cancel();
+    setState(() => _remaining = _resendSeconds);
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (_remaining <= 0) {
+        t.cancel();
+      } else {
+        setState(() => _remaining--);
+      }
+    });
+  }
+
+  Future<void> _resend() async {
+    final auth = ref.read(authControllerProvider.notifier);
+    final otp = auth.resendOtp();
+    if (otp.isEmpty) return;
+
+    await OtpNotificationService.showOtp(
+      maskedPhone: auth.maskedPhone,
+      code: otp,
+    );
+    _startCountdown();
+  }
+
+  void _onCompleted(String code) {
+    final auth = ref.read(authControllerProvider.notifier);
+    final ok = auth.verifyOtp(code);
+    if (!ok) {
+      setState(() => _error = true);
+      HapticFeedback.heavyImpact();
+      return;
+    }
+
+    HapticFeedback.mediumImpact();
+    final phone = auth.pendingPhone;
+    AccountSession.restore(ref, phone);
+
+    if (!mounted) return;
+    final session = ref.read(authControllerProvider);
+    if (session.hasRole) {
+      context.go(AccountSession.homeRouteFor(ref));
+    } else {
+      context.go(Routes.role);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.colors;
+    final masked = ref.read(authControllerProvider.notifier).maskedPhone;
+
+    return Scaffold(
+      appBar: QaydaAppBar(
+        title: 'Qayda',
+        onBack: () => _back(context),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: AppSpacing.lg),
+              const Text('Введите код', style: AppTypography.headlineMobile),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Отправлен на $masked',
+                style: AppTypography.bodyMd
+                    .copyWith(color: scheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 56),
+              OtpInput(
+                length: AppConstants.otpLength,
+                onChanged: (_) {
+                  if (_error) setState(() => _error = false);
+                },
+                onCompleted: _onCompleted,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              if (_error)
+                Center(
+                  child: Text(
+                    'Неверный код. Попробуйте ещё раз / Код қате',
+                    style: AppTypography.bodyMd.copyWith(color: scheme.error),
+                  ),
+                ),
+              const SizedBox(height: AppSpacing.lg),
+              Center(
+                child: _ResendControl(
+                  remaining: _remaining,
+                  onResend: _resend,
+                ),
+              ),
+              const Spacer(),
+              if (kDebugMode)
+                GestureDetector(
+                  onTap: () {
+                    final otp = ref
+                        .read(authControllerProvider.notifier)
+                        .debugOtp;
+                    Clipboard.setData(ClipboardData(text: otp));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Код скопирован: $otp'),
+                        duration: const Duration(seconds: 3),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: scheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.developer_mode,
+                            size: 16, color: scheme.onPrimaryContainer),
+                        const SizedBox(width: 6),
+                        Text(
+                          'DEV: ${ref.watch(authControllerProvider.notifier).debugOtp}',
+                          style: AppTypography.labelMd.copyWith(
+                            color: scheme.onPrimaryContainer,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(Icons.copy, size: 14, color: scheme.onPrimaryContainer),
+                      ],
+                    ),
+                  ),
+                ),
+              Center(
+                child: Text(
+                  'Код придёт в уведомлении / Код хабарландыруда келеді',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.labelMd
+                      .copyWith(color: scheme.onSurfaceVariant),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _back(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(Routes.welcome);
+    }
+  }
+}
+
+class _ResendControl extends StatelessWidget {
+  final int remaining;
+  final Future<void> Function() onResend;
+
+  const _ResendControl({required this.remaining, required this.onResend});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.colors;
+    if (remaining > 0) {
+      final m = remaining ~/ 60;
+      final s = (remaining % 60).toString().padLeft(2, '0');
+      return Text(
+        'Отправить снова через $m:$s',
+        style: AppTypography.bodyMd.copyWith(color: scheme.onSurfaceVariant),
+      );
+    }
+    return TextButton(
+      onPressed: () => onResend(),
+      child: const Text('Отправить снова / Қайта жіберу'),
+    );
+  }
+}

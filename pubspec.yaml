@@ -1,0 +1,64 @@
+name: qayda
+description: "Qayda — bilingual taxi MVP (Passenger + Driver). Diploma project."
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # ── State management ──────────────────────────────────────────────
+  flutter_riverpod: ^2.5.1
+
+  # ── Navigation ────────────────────────────────────────────────────
+  go_router: ^14.2.0
+
+  # ── Maps & location (OpenStreetMap — no API key / billing) ────────
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  geolocator: ^13.0.0
+  http: ^1.2.2
+
+  # ── Persistence ───────────────────────────────────────────────────
+  shared_preferences: ^2.2.3
+
+  # ── Utils ─────────────────────────────────────────────────────────
+  intl: ^0.20.2
+
+  # ── Local notifications (mock SMS OTP on Android emulator) ──────
+  flutter_local_notifications: ^17.2.4
+
+  # Firebase foundation
+  firebase_core: ^4.10.0
+  firebase_auth: ^6.5.2
+  cloud_firestore: ^6.5.0
+
+  # ── Firebase (uncomment when wiring backend) ──────────────────────
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true          # enables l10n generation from .arb
+
+  assets:
+    - assets/images/
+    - assets/icons/
+
+  # Uncomment once Inter .ttf files are in assets/fonts/
+  # fonts:
+  #   - family: Inter
+  #     fonts:
+  #       - asset: assets/fonts/Inter-Regular.ttf
+  #       - asset: assets/fonts/Inter-SemiBold.ttf  weight: 600
+  #       - asset: assets/fonts/Inter-Bold.ttf       weight: 700

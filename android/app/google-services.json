@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "898588116588",
+    "project_id": "qayda-taxi-app-c0404",
+    "storage_bucket": "qayda-taxi-app-c0404.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:898588116588:android:0954cdb8dda34685d3fa49",
+        "android_client_info": {
+          "package_name": "com.example.qayda"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAC8DlZcgMf6X5WJePBfE5xSVw2NCjhWo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

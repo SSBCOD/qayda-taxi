@@ -1,0 +1,38 @@
+{
+  "@@locale": "ru",
+  "appName": "Qayda",
+  "@appName": {
+    "description": "Application name"
+  },
+  "commonNext": "Далее",
+  "commonStart": "Начать",
+  "commonCancel": "Отмена",
+  "commonAccept": "Принять",
+  "commonContinue": "Продолжить",
+  "navTaxi": "Такси",
+  "navHistory": "История",
+  "navProfile": "Профиль",
+  "tariffEconomy": "Эконом",
+  "tariffComfort": "Комфорт",
+  "tariffBusiness": "Бизнес",
+  "homeSearchHint": "Қайда барамыз? / Куда поедем?",
+  "@homeSearchHint": {
+    "description": "Bilingual search field placeholder on the passenger home map"
+  },
+  "homeEtaPickup": "Подача: {minutes} мин",
+  "@homeEtaPickup": {
+    "description": "Floating badge showing estimated pickup time in minutes",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "homeChipHome": "Дом",
+  "homeChipWork": "Работа",
+  "homePromoTitle": "Быстрая подача",
+  "homePromoSubtitle": "Машины рядом с вами",
+  "menuPayments": "Платежи",
+  "menuSupport": "Поддержка",
+  "menuSettings": "Настройки"
+}

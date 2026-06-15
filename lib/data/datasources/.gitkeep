@@ -1,0 +1,3 @@
+# Data sources live here:
+#   firebase/  -> *_firebase_source.dart  (Firestore / Auth / Storage)
+#   mock/      -> *_mock_source.dart       (local demo data)
