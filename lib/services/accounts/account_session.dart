@@ -11,6 +11,7 @@ import '../../features/passenger/history/application/history_providers.dart';
 import '../../features/passenger/profile/application/favorites_controller.dart';
 import '../../features/payment/application/payment_controller.dart';
 import '../../features/settings/application/notification_prefs_controller.dart';
+import '../../data/models/payment_method.dart';
 import '../../app/router/routes.dart';
 import '../../core/theme/theme_controller.dart';
 import 'account_repository.dart';
@@ -71,6 +72,8 @@ class AccountSession {
     UserRole? role,
     KycState? kycState,
     ThemeMode? themeMode,
+    List<PaymentMethod>? paymentMethods,
+    String? selectedPaymentId,
   }) {
     final auth = ref.read(authControllerProvider);
     final effectivePhone = phone ?? auth.phone;
@@ -80,6 +83,9 @@ class AccountSession {
     final existing =
         ref.read(accountRepositoryProvider).loadOrCreate(effectivePhone);
 
+    final PaymentState? payment = (paymentMethods == null || selectedPaymentId == null)
+        ? ref.read(paymentControllerProvider)
+        : null;
     final data = existing.copyWith(
       role: effectiveRole,
       clearRole: effectiveRole == null,
@@ -87,9 +93,9 @@ class AccountSession {
         kycState ?? ref.read(kycControllerProvider),
       ),
       paymentMethods: AccountSerializers.paymentMethodsToJson(
-        ref.read(paymentControllerProvider).methods,
+        paymentMethods ?? payment!.methods,
       ),
-      selectedPaymentId: ref.read(paymentControllerProvider).selectedId,
+      selectedPaymentId: selectedPaymentId ?? payment!.selectedId,
       notificationPrefs: AccountSerializers.notificationPrefsToJson(
         ref.read(notificationPrefsControllerProvider),
       ),

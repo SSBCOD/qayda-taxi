@@ -48,7 +48,8 @@ class PaymentController extends Notifier<PaymentState> {
   void select(String id) {
     if (!state.methods.any((m) => m.id == id)) return;
     state = state.copyWith(selectedId: id);
-    AccountSession.save(ref);
+    AccountSession.save(ref,
+        paymentMethods: state.methods, selectedPaymentId: state.selectedId);
   }
 
   /// Fake card binding — detects issuer from BIN and appends to the list.
@@ -62,7 +63,8 @@ class PaymentController extends Notifier<PaymentState> {
       methods.add(method);
     }
     state = state.copyWith(methods: methods, selectedId: method.id);
-    AccountSession.save(ref);
+    AccountSession.save(ref,
+        paymentMethods: state.methods, selectedPaymentId: state.selectedId);
   }
 }
 

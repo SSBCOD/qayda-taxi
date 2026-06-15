@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../features/ride/map/map_controller.dart';
+import '../../../features/ride/map/map_state.dart';
 import '../../theme/app_colors.dart';
 import 'pulse_marker.dart';
 import '../feedback/app_loader.dart';
@@ -30,16 +31,14 @@ class QaydaMap extends ConsumerWidget {
         )));
     final controller = ref.read(mapControllerProvider.notifier);
     final scheme = Theme.of(context).colorScheme;
-    final center = ref.watch(mapControllerProvider.select((s) => s.center));
-    final zoom = ref.watch(mapControllerProvider.select((s) => s.zoom));
 
     return Stack(
       children: [
         FlutterMap(
           mapController: controller.mapController,
           options: MapOptions(
-            initialCenter: center,
-            initialZoom: zoom,
+            initialCenter: MapState.initial.center,
+            initialZoom: MapState.initial.zoom,
             minZoom: 3,
             maxZoom: 18,
           ),
