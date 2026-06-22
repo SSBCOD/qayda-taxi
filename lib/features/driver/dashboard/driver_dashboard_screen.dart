@@ -62,42 +62,18 @@ class DriverDashboardScreen extends ConsumerWidget {
             ),
           ),
 
-          // ── Draggable bottom sheet ───────────────────────────────────
+          // ── Draggable bottom sheet (status bar is INSIDE) ───────────
           DraggableScrollableSheet(
-            initialChildSize: 0.38,
-            minChildSize: 0.28,
-            maxChildSize: 0.70,
+            initialChildSize: 0.42,
+            minChildSize: 0.30,
+            maxChildSize: 0.85,
             snap: true,
-            snapSizes: const [0.28, 0.38, 0.70],
-            builder: (context, scrollController) => _DashboardSheet(
+            snapSizes: const [0.30, 0.42, 0.85],
+            builder: (ctx, scrollController) => _DashboardSheet(
               state: state,
               scrollController: scrollController,
-            ),
-          ),
-
-          // ── Status bar — BOTTOM, above the sheet ────────────────────
-          Positioned(
-            left: AppSpacing.page,
-            right: AppSpacing.page,
-            bottom: MediaQuery.sizeOf(context).height * 0.38 + AppSpacing.sm,
-            child: Row(
-              children: [
-                Builder(
-                  builder: (ctx) => _GlassCircleButton(
-                    icon: Icons.menu,
-                    onTap: () => Scaffold.of(ctx).openDrawer(),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Center(child: _StatusPill(online: state.isOnline)),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                _GlassCircleButton(
-                  icon: Icons.more_vert,
-                  onTap: () => _showMore(context),
-                ),
-              ],
+              onOpenDrawer: () => Scaffold.of(context).openDrawer(),
+              onMore: () => _showMore(context),
             ),
           ),
         ],
@@ -115,7 +91,15 @@ class DriverDashboardScreen extends ConsumerWidget {
 class _DashboardSheet extends ConsumerWidget {
   final DriverState state;
   final ScrollController? scrollController;
-  const _DashboardSheet({required this.state, this.scrollController});
+  final VoidCallback? onOpenDrawer;
+  final VoidCallback? onMore;
+
+  const _DashboardSheet({
+    required this.state,
+    this.scrollController,
+    this.onOpenDrawer,
+    this.onMore,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -123,91 +107,198 @@ class _DashboardSheet extends ConsumerWidget {
     final online = state.isOnline;
     final notifier = ref.read(driverControllerProvider.notifier);
     final compact = MediaQuery.sizeOf(context).width < 360;
-    final metricGap = compact ? AppSpacing.sm : AppSpacing.gutter;
-    final maxSheetHeight = MediaQuery.sizeOf(context).height * 0.56;
+    final gap = compact ? AppSpacing.sm : AppSpacing.gutter;
 
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: maxSheetHeight),
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerLowest,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x14000000),
-              blurRadius: 24,
-              offset: Offset(0, -8),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: SingleChildScrollView(
-            controller: scrollController,
-            physics: const ClampingScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.page, 0, AppSpacing.page, AppSpacing.md),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const DragHandle(),
-                  Text(
-                    online ? 'Вы в сети' : 'Вы не в сети',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.headlineMobile,
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLowest,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x18000000), blurRadius: 24, offset: Offset(0, -6)),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          controller: scrollController,
+          physics: const ClampingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.page, 0, AppSpacing.page, AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const DragHandle(),
+
+                // ── Status row (moves WITH sheet) ──────────────────────
+                Row(
+                  children: [
+                    _GlassCircleButton(
+                      icon: Icons.menu,
+                      onTap: onOpenDrawer ?? () {},
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Center(child: _StatusPill(online: online)),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    _GlassCircleButton(
+                      icon: Icons.more_vert,
+                      onTap: onMore ?? () {},
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // ── Status text ────────────────────────────────────────
+                Text(
+                  online ? 'Вы в сети' : 'Вы не в сети',
+                  style: AppTypography.headlineMobile,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  online ? 'Желідесіз' : 'Желіде емес',
+                  style: AppTypography.bodyMd.copyWith(color: scheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // ── Metrics ────────────────────────────────────────────
+                Row(
+                  children: [
+                    Expanded(
+                      child: MetricTile(
+                        value: state.rating.toStringAsFixed(2),
+                        label: 'Рейтинг',
+                        icon: Icons.star,
+                      ),
+                    ),
+                    SizedBox(width: gap),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => context.push(Routes.dEarnings),
+                        child: MetricTile(
+                          value: state.earningsToday.tenge,
+                          label: 'Табыс',
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: gap),
+                    Expanded(
+                      child: MetricTile(
+                        value: '${state.tripsToday}',
+                        label: 'Заказы',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // ── Online/offline toggle ──────────────────────────────
+                if (online)
+                  _OfflineToggle(onTap: notifier.goOffline)
+                else
+                  PrimaryActionButton(
+                    label: 'Выйти на линию',
+                    labelSecondary: 'Желіге шығу',
+                    onPressed: notifier.goOnline,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    online ? 'Желідесіз' : 'Желіде емес',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.bodyMd
-                        .copyWith(color: scheme.onSurfaceVariant),
+
+                const SizedBox(height: AppSpacing.lg),
+                Divider(color: scheme.outlineVariant.withValues(alpha: 0.3)),
+                const SizedBox(height: AppSpacing.md),
+
+                // ── Extra content (visible when sheet expanded) ────────
+                Text(
+                  'БЫСТРЫЕ ДЕЙСТВИЯ',
+                  style: AppTypography.labelMd.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    letterSpacing: 1.5,
+                    fontSize: 11,
                   ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Row(
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    _QuickAction(
+                      icon: Icons.account_balance_wallet_outlined,
+                      label: 'Кошелёк',
+                      labelKk: 'Əмиян',
+                      onTap: () => context.push(Routes.dWallet),
+                    ),
+                    SizedBox(width: gap),
+                    _QuickAction(
+                      icon: Icons.bar_chart,
+                      label: 'Статистика',
+                      labelKk: 'Статистика',
+                      onTap: () => context.push(Routes.dEarnings),
+                    ),
+                    SizedBox(width: gap),
+                    _QuickAction(
+                      icon: Icons.history,
+                      label: 'История',
+                      labelKk: 'Тарих',
+                      onTap: () => context.push(Routes.dEarningsHistory),
+                    ),
+                    SizedBox(width: gap),
+                    _QuickAction(
+                      icon: Icons.person_outline,
+                      label: 'Профиль',
+                      labelKk: 'Профиль',
+                      onTap: () => context.push(Routes.dProfile),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // ── Work zone info ─────────────────────────────────────
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: online
+                        ? AppColors.online.withValues(alpha: 0.1)
+                        : scheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: online
+                          ? AppColors.online.withValues(alpha: 0.3)
+                          : scheme.outlineVariant.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
                     children: [
-                      Expanded(
-                        child: MetricTile(
-                          value: state.rating.toStringAsFixed(2),
-                          label: 'Рейтинг',
-                          icon: Icons.star,
-                        ),
+                      Icon(
+                        online ? Icons.location_on : Icons.location_off_outlined,
+                        color: online ? AppColors.online : scheme.onSurfaceVariant,
                       ),
-                      SizedBox(width: metricGap),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: GestureDetector(
-                          onTap: () => context.push(Routes.dEarnings),
-                          child: MetricTile(
-                            value: state.earningsToday.tenge,
-                            label: 'Табыс',
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: metricGap),
-                      Expanded(
-                        child: MetricTile(
-                          value: '${state.tripsToday}',
-                          label: 'Заказы',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              online ? 'Алматы • Высокий спрос' : 'Алматы • Вы офлайн',
+                              style: AppTypography.bodyMd.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: online ? AppColors.online : scheme.onSurfaceVariant,
+                              ),
+                            ),
+                            Text(
+                              online
+                                  ? 'Медеу: x1.4 • Центр: x1.2'
+                                  : 'Выйдите на линию чтобы принимать заказы',
+                              style: AppTypography.labelMd.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.lg),
-                  if (online)
-                    _OfflineToggle(onTap: notifier.goOffline)
-                  else
-                    PrimaryActionButton(
-                      label: 'Выйти на линию',
-                      labelSecondary: 'Желіге шығу',
-                      onPressed: notifier.goOnline,
-                    ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -240,6 +331,62 @@ class _OfflineToggle extends StatelessWidget {
                 AppTypography.headlineMd.copyWith(color: scheme.onPrimary),
             secondaryStyle: AppTypography.bodyMd
                 .copyWith(color: scheme.onPrimary.withValues(alpha: 0.7)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String labelKk;
+  final VoidCallback onTap;
+
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.labelKk,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.colors;
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: scheme.outlineVariant.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: AppColors.purple, size: 22),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                style: AppTypography.labelMd.copyWith(fontSize: 10),
+              ),
+              Text(
+                labelKk,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                style: AppTypography.labelMd.copyWith(
+                  fontSize: 9,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
         ),
       ),

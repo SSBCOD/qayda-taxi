@@ -99,16 +99,16 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               const SizedBox(height: AppSpacing.lg),
 
               // ── Header ──────────────────────────────────────────────
-              const Text(
+                      Text(
                 'Создайте аккаунт',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 28,
                   fontWeight: FontWeight.w900,
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Заполните данные для регистрации',
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
               ),
@@ -324,13 +324,14 @@ class _Field extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
+          style: TextStyle(
+            color: scheme.onSurfaceVariant,
             fontSize: 11,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.2,
@@ -341,30 +342,30 @@ class _Field extends StatelessWidget {
           controller: controller,
           keyboardType: keyboardType,
           onChanged: onChanged,
-          style: AppTypography.headlineMd.copyWith(color: Colors.white),
+          style: AppTypography.headlineMd.copyWith(color: scheme.onSurface),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: AppTypography.headlineMd
-                .copyWith(color: AppColors.textSecondary),
+                .copyWith(color: scheme.onSurfaceVariant),
             filled: true,
-            fillColor: AppColors.bgCard,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadii.input),
-              borderSide: const BorderSide(color: AppColors.outlineLight),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadii.input),
-              borderSide: const BorderSide(color: AppColors.outlineLight),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadii.input),
-              borderSide:
-                  const BorderSide(color: AppColors.purple, width: 1.5),
-            ),
-          ),
-        ),
+            fillColor: scheme.surfaceContainerLow,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.input),
+                    borderSide: BorderSide(color: scheme.outlineVariant),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.input),
+                    borderSide: BorderSide(color: scheme.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.input),
+                    borderSide:
+                        const BorderSide(color: AppColors.purple, width: 1.5),
+                  ),
+                ),
+              ),
       ],
     );
   }
