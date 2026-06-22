@@ -24,6 +24,7 @@ class RedirectGuard {
     Routes.welcome,
     Routes.phone,
     Routes.otp,
+    Routes.profileSetup,
     Routes.role,
   };
 
@@ -93,9 +94,10 @@ class RedirectGuard {
       return inAuthFlow ? null : Routes.splash;
     }
 
-    // 2. Authenticated but no role chosen yet → role gate.
+    // 2. Authenticated but no role chosen yet → profile setup or role gate.
     if (!auth.hasRole) {
-      return loc == Routes.role ? null : Routes.role;
+      if (loc == Routes.role || loc == Routes.profileSetup) return null;
+      return Routes.profileSetup;
     }
 
     final isDriver = auth.role == UserRole.driver;

@@ -9,6 +9,7 @@ class Routes {
   static const String welcome = '/welcome';
   static const String phone = '/auth/phone';
   static const String otp = '/auth/otp';
+  static const String profileSetup = '/auth/profile-setup';
   static const String role = '/auth/role';
 
   // Driver KYC / onboarding

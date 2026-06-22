@@ -98,6 +98,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const OtpScreen(),
       ),
       GoRoute(
+        path: Routes.profileSetup,
+        builder: (context, state) => const ProfileSetupScreen(),
+      ),
+      GoRoute(
         path: Routes.role,
         builder: (context, state) => const RoleScreen(),
       ),
