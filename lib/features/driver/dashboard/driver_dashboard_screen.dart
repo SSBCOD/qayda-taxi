@@ -79,19 +79,25 @@ class DriverDashboardScreen extends ConsumerWidget {
               ),
             ),
           ),
-          // Right-side map controls.
+          // Right-side map controls — bottom right, above the sheet.
           Positioned(
             right: AppSpacing.page,
-            top: MediaQuery.paddingOf(context).top + 88,
+            bottom: 230,
             child: MapControls(
               onLayers: () {},
               onMyLocation: () =>
                   ref.read(mapControllerProvider.notifier).locateUser(),
             ),
           ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: _DashboardSheet(state: state),
+          // Draggable bottom sheet.
+          DraggableScrollableSheet(
+            initialChildSize: 0.32,
+            minChildSize: 0.22,
+            maxChildSize: 0.65,
+            snap: true,
+            snapSizes: const [0.22, 0.32, 0.65],
+            builder: (context, scrollController) =>
+                _DashboardSheet(state: state, scrollController: scrollController),
           ),
         ],
       ),
@@ -107,7 +113,8 @@ class DriverDashboardScreen extends ConsumerWidget {
 
 class _DashboardSheet extends ConsumerWidget {
   final DriverState state;
-  const _DashboardSheet({required this.state});
+  final ScrollController? scrollController;
+  const _DashboardSheet({required this.state, this.scrollController});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -136,6 +143,7 @@ class _DashboardSheet extends ConsumerWidget {
         child: SafeArea(
           top: false,
           child: SingleChildScrollView(
+            controller: scrollController,
             physics: const ClampingScrollPhysics(),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -153,7 +161,7 @@ class _DashboardSheet extends ConsumerWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    online ? 'Желідесіз' : 'Желіде емессіз',
+                    online ? 'Желідесіз' : 'Желіде емес',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.bodyMd
@@ -328,7 +336,8 @@ class _DriverDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = context.colors;
-    final phone = ref.watch(authControllerProvider).phone ?? '+7 777 ••• •• 77';
+    final auth  = ref.watch(authControllerProvider);
+    final phone = auth.phone ?? '+7 ••• ••• •• ••';
 
     void goProfile() {
       Navigator.of(context).pop();
@@ -354,8 +363,10 @@ class _DriverDrawer extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Арман Ибрагимов',
+                    Text(
+                      auth.displayName.isNotEmpty
+                          ? auth.displayName
+                          : 'Водитель',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.headlineMd,
