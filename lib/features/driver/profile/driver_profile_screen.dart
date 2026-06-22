@@ -32,7 +32,10 @@ class DriverProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = context.colors;
     final profile = ref.watch(driverProfileProvider);
-    final phone = ref.read(authControllerProvider.notifier).maskedPhone;
+    final auth    = ref.watch(authControllerProvider);
+    final phone   = auth.phone != null
+        ? auth.phone!.replaceRange(5, auth.phone!.length - 2, ' ••• ••')
+        : ref.read(authControllerProvider.notifier).maskedPhone;
     final tripsFormatted =
         NumberFormat.decimalPattern('ru').format(profile.totalTrips);
 
@@ -104,8 +107,10 @@ class DriverProfileScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
-                '${profile.nameRu} / ${profile.nameKk}',
-                maxLines: 2,
+                auth.displayName.isNotEmpty
+                    ? auth.displayName
+                    : profile.nameRu,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: AppTypography.headlineMobile,
