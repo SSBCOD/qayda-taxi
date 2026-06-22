@@ -42,6 +42,7 @@ import '../../features/settings/notification_preferences_screen.dart';
 import '../../features/settings/privacy_security_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/settings/theme_selection_screen.dart';
+import '../../features/profile/edit_profile_screen.dart';
 import 'redirect_guard.dart';
 import 'routes.dart';
 import 'shells/passenger_shell.dart';
@@ -236,6 +237,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.supportChat,
         builder: (context, state) => const SupportChatScreen(),
+      ),
+      GoRoute(
+        path: Routes.editProfile,
+        builder: (context, state) => const EditProfileScreen(),
       ),
       GoRoute(
         path: Routes.settings,

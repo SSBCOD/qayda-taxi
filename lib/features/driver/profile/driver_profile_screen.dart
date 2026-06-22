@@ -166,10 +166,7 @@ class DriverProfileScreen extends ConsumerWidget {
               _MenuRow(
                 icon: Icons.person_outline,
                 label: 'Личные данные / Жеке деректер',
-                onTap: () => _toast(
-                  context,
-                  'Редактирование скоро / Өңдеу жақында',
-                ),
+                onTap: () => context.push(Routes.editProfile),
               ),
               _MenuRow(
                 icon: Icons.local_taxi_outlined,

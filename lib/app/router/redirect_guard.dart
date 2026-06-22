@@ -39,6 +39,7 @@ class RedirectGuard {
 
   /// Shared between passenger and driver (payment, settings, support).
   static const Set<String> _sharedRoutes = {
+    Routes.editProfile,
     Routes.payment,
     Routes.paymentAdd,
     Routes.paymentBinding,

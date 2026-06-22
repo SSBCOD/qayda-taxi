@@ -48,6 +48,9 @@ class Routes {
   static const String dReferral = '/d/referral';
   static const String dProfile = '/d/profile';
 
+  // Profile editing
+  static const String editProfile = '/edit-profile';
+
   // Shared sections
   static const String payment = '/payment';
   static const String paymentAdd = '/payment/add';

@@ -101,7 +101,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               _MenuRow(
                 icon: Icons.person_outline,
                 label: 'Личные данные / Жеке деректер',
-                onTap: () {},
+                onTap: () => context.push(Routes.editProfile),
               ),
               _MenuRow(
                 icon: Icons.payments_outlined,
