@@ -11,13 +11,10 @@ import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/widgets.dart';
-import '../../data/models/enums.dart';
 import '../../services/notifications/otp_notification_service.dart';
 import 'application/auth_controller.dart';
-import 'application/user_profile_controller.dart';
 
-/// Welcome screen — role tabs (Passenger / Driver) + phone entry.
-/// Pre-selects the role so it's already set when the user finishes OTP.
+/// STEP 2 of registration — phone number entry (after profile setup).
 class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -27,10 +24,9 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   final _controller = TextEditingController();
-  String _digits = '';
+  String _digits    = '';
   String? _error;
-  bool _submitting = false;
-  UserRole _role = UserRole.passenger;
+  bool _submitting  = false;
 
   bool get _canSubmit =>
       _digits.length == KzPhone.nationalLength &&
@@ -43,7 +39,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     super.dispose();
   }
 
-  // Format 10 local digits as 747-123-45-67 (no leading country 7).
   static String _fmtLocal(String raw) {
     final b = StringBuffer();
     for (var i = 0; i < raw.length && i < 10; i++) {
@@ -54,7 +49,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   }
 
   void _onChanged(String value) {
-    // Keep only digits; strip a leading 7 country code if user typed it.
     var raw = value.replaceAll(RegExp(r'\D'), '');
     if (raw.startsWith('7') && raw.length > 10) raw = raw.substring(1);
     if (raw.length > 10) raw = raw.substring(0, 10);
@@ -64,8 +58,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
     );
-
-    // Full 11-digit number for KzPhone validation (country digit + local).
     final full = raw.isEmpty ? '' : '7$raw';
     setState(() {
       _digits = full;
@@ -76,19 +68,14 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   }
 
   Future<void> _submit() async {
-    final validationError = KzPhone.validate(_digits);
-    if (validationError != null) {
-      setState(() => _error = validationError);
-      return;
-    }
+    final err = KzPhone.validate(_digits);
+    if (err != null) { setState(() => _error = err); return; }
     if (!_canSubmit) return;
 
     setState(() => _submitting = true);
     try {
       final e164 = KzPhone.toE164(_digits);
-      final otp = ref.read(authControllerProvider.notifier).requestOtp(e164);
-      // Save chosen role so OTP screen can use it
-      ref.read(selectedRoleProvider.notifier).state = _role;
+      final otp  = ref.read(authControllerProvider.notifier).requestOtp(e164);
       await OtpNotificationService.showOtp(
         maskedPhone: KzPhone.mask(_digits),
         code: otp,
@@ -101,7 +88,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = context.colors;
+    final scheme   = context.colors;
+    final auth     = ref.watch(authControllerProvider);
+    final firstName = auth.firstName;
 
     return Scaffold(
       body: SafeArea(
@@ -112,13 +101,23 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             children: [
               const SizedBox(height: AppSpacing.lg),
 
-              // ── Header ──────────────────────────────────────────────────
+              // ── Greeting ─────────────────────────────────────────────
+              if (firstName.isNotEmpty) ...[
+                Text(
+                  'Привет, $firstName!',
+                  style: AppTypography.headlineLg.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
               Text(
                 'Поездка начнётся',
                 style: AppTypography.headlineLg.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w900,
-                  fontSize: 30,
+                  fontSize: 28,
                 ),
               ),
               Text(
@@ -126,18 +125,18 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 style: AppTypography.headlineLg.copyWith(
                   color: AppColors.purpleLight,
                   fontWeight: FontWeight.w900,
-                  fontSize: 30,
+                  fontSize: 28,
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Введите номер телефона, чтобы авторизоваться',
+                'Введите номер телефона для входа',
                 style: AppTypography.bodyMd
                     .copyWith(color: scheme.onSurfaceVariant),
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              // ── Card with role tabs + phone ──────────────────────────────
+              // ── Phone card ───────────────────────────────────────────
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
@@ -148,36 +147,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
-                    // ── Role tabs ──────────────────────────────────────────
-                    Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.bgMain,
-                        borderRadius: BorderRadius.circular(AppRadii.button),
-                      ),
-                      child: Row(
-                        children: [
-                          _RoleTab(
-                            label: 'Пассажир',
-                            selected: _role == UserRole.passenger,
-                            onTap: () => setState(() => _role = UserRole.passenger),
-                          ),
-                          _RoleTab(
-                            label: 'Водитель',
-                            selected: _role == UserRole.driver,
-                            onTap: () => setState(() => _role = UserRole.driver),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    // ── Phone field ────────────────────────────────────────
-                    Text(
+                    const Text(
                       'НОМЕР ТЕЛЕФОНА',
-                      style: AppTypography.labelMd.copyWith(
-                        color: scheme.onSurfaceVariant,
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
                         letterSpacing: 1.5,
                       ),
                     ),
@@ -189,17 +164,16 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     ),
                     if (_error != null) ...[
                       const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        _error!,
-                        style: AppTypography.bodyMd.copyWith(color: scheme.error),
-                      ),
+                      Text(_error!,
+                          style: AppTypography.bodyMd
+                              .copyWith(color: scheme.error)),
                     ],
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       'Нажимая «Продолжить», вы принимаете условия '
                       'Пользовательского соглашения и Политики конфиденциальности',
-                      style: AppTypography.labelMd.copyWith(
-                        color: scheme.onSurfaceVariant,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
                         fontSize: 11,
                       ),
                     ),
@@ -211,13 +185,24 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   ],
                 ),
               ),
-
               const SizedBox(height: AppSpacing.lg),
+
               Center(
-                child: Text(
+                child: TextButton(
+                  onPressed: () => context.go(Routes.profileSetup),
+                  child: const Text(
+                    '← Изменить профиль',
+                    style: TextStyle(color: AppColors.purpleLight),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.md),
+              Center(
+                child: const Text(
                   'БЫСТРЫЙ ВХОД ЧЕРЕЗ',
-                  style: AppTypography.labelMd.copyWith(
-                    color: scheme.onSurfaceVariant,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
                     letterSpacing: 2,
                     fontSize: 11,
                   ),
@@ -227,15 +212,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _SocialButton(
-                    label: 'Google',
-                    icon: Icons.g_mobiledata_rounded,
-                  ),
+                  _SocialButton(icon: Icons.g_mobiledata_rounded),
                   const SizedBox(width: AppSpacing.md),
-                  _SocialButton(
-                    label: 'Apple',
-                    icon: Icons.apple,
-                  ),
+                  _SocialButton(icon: Icons.apple),
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -246,57 +225,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     );
   }
 }
-
-// ── Role tab widget ────────────────────────────────────────────────────────────
-
-class _RoleTab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _RoleTab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.purple : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadii.button - 4),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: AppColors.purple.withValues(alpha: 0.35),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: AppTypography.labelMd.copyWith(
-                color: selected ? Colors.white : AppColors.textSecondary,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Phone field ────────────────────────────────────────────────────────────────
 
 class _PhoneField extends StatelessWidget {
   final TextEditingController controller;
@@ -324,9 +252,11 @@ class _PhoneField extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Text('+7', style: AppTypography.headlineMd.copyWith(color: Colors.white)),
+              Text('+7',
+                  style: AppTypography.headlineMd
+                      .copyWith(color: Colors.white)),
               const SizedBox(width: 4),
-              Icon(Icons.keyboard_arrow_down_rounded,
+              const Icon(Icons.keyboard_arrow_down_rounded,
                   size: 18, color: AppColors.textSecondary),
             ],
           ),
@@ -347,11 +277,10 @@ class _PhoneField extends StatelessWidget {
             child: TextField(
               controller: controller,
               onChanged: onChanged,
-              autofocus: false,
               keyboardType: TextInputType.phone,
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[\d\-]')),
-                LengthLimitingTextInputFormatter(15),
+                LengthLimitingTextInputFormatter(12),
               ],
               style: AppTypography.headlineMd.copyWith(color: Colors.white),
               decoration: InputDecoration(
@@ -360,7 +289,8 @@ class _PhoneField extends StatelessWidget {
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 14),
                 hintText: '747-123-45-67',
                 hintStyle: AppTypography.headlineMd
                     .copyWith(color: AppColors.textSecondary),
@@ -373,26 +303,21 @@ class _PhoneField extends StatelessWidget {
   }
 }
 
-// ── Social login button ────────────────────────────────────────────────────────
-
 class _SocialButton extends StatelessWidget {
-  final String label;
   final IconData icon;
-
-  const _SocialButton({required this.label, required this.icon});
+  const _SocialButton({required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 56,
-      height: 56,
+      width: 52,
+      height: 52,
       decoration: BoxDecoration(
         color: AppColors.bgCard,
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.outlineLight),
       ),
-      child: Icon(icon, color: AppColors.textSecondary, size: 26),
+      child: Icon(icon, color: AppColors.textSecondary, size: 24),
     );
   }
 }
-

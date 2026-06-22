@@ -8,11 +8,12 @@ import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/widgets.dart';
-import '../../services/accounts/account_session.dart';
+import '../../data/models/enums.dart';
 import 'application/auth_controller.dart';
 import 'application/user_profile_controller.dart';
 
-/// Profile setup shown once after OTP — user enters name & surname.
+/// STEP 1 of registration — shown BEFORE phone entry.
+/// Collects name, surname, email and role (passenger / driver).
 class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});
 
@@ -24,9 +25,22 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   final _firstCtrl = TextEditingController();
   final _lastCtrl  = TextEditingController();
   final _emailCtrl = TextEditingController();
-  bool _saving = false;
+  UserRole _role   = UserRole.passenger;
+  bool _saving     = false;
 
   bool get _canContinue => _firstCtrl.text.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill if user already saved profile earlier.
+    final auth = ref.read(authControllerProvider);
+    if (auth.hasProfile) {
+      _firstCtrl.text = auth.firstName;
+      _lastCtrl.text  = auth.lastName;
+      _emailCtrl.text = auth.email;
+    }
+  }
 
   @override
   void dispose() {
@@ -40,19 +54,17 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     if (!_canContinue || _saving) return;
     setState(() => _saving = true);
     try {
-      await ref.read(userProfileProvider.notifier).save(
+      // Save to AuthController (persists to SharedPreferences).
+      await ref.read(authControllerProvider.notifier).saveProfile(
             firstName: _firstCtrl.text,
             lastName:  _lastCtrl.text,
             email:     _emailCtrl.text,
           );
-      // Apply pre-selected role and navigate
-      final role = ref.read(selectedRoleProvider);
-      ref.read(authControllerProvider.notifier).selectRole(role);
-      AccountSession.save(ref, role: role);
+      // Store pre-selected role for OTP completion.
+      ref.read(selectedRoleProvider.notifier).state = _role;
       if (!mounted) return;
-      context.go(
-        role.name == 'driver' ? Routes.kycVehicle : Routes.pHome,
-      );
+      // Navigate to phone entry (Welcome).
+      context.go(Routes.welcome);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -61,11 +73,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: QaydaAppBar(
-        title: 'Ваш профиль',
-        subtitle: 'Сіздің профиліңіз',
-        onBack: () => context.go(Routes.otp),
-      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
@@ -74,34 +81,50 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             children: [
               const SizedBox(height: AppSpacing.lg),
 
-              // ── Avatar placeholder ───────────────────────────────────
+              // ── Header ──────────────────────────────────────────────
+              const Text(
+                'Создайте аккаунт',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Заполните данные для регистрации',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // ── Avatar ──────────────────────────────────────────────
               Center(
                 child: Stack(
                   children: [
                     Container(
-                      width: 96,
-                      height: 96,
+                      width: 80,
+                      height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: AppColors.bgCard,
                         border: Border.all(color: AppColors.outlineLight, width: 2),
                       ),
                       child: const Icon(Icons.person_outline_rounded,
-                          size: 48, color: AppColors.textSecondary),
+                          size: 40, color: AppColors.textSecondary),
                     ),
                     Positioned(
                       right: 0,
                       bottom: 0,
                       child: Container(
-                        width: 30,
-                        height: 30,
+                        width: 26,
+                        height: 26,
                         decoration: BoxDecoration(
                           color: AppColors.purple,
                           shape: BoxShape.circle,
                           border: Border.all(color: AppColors.bgMain, width: 2),
                         ),
                         child: const Icon(Icons.camera_alt_outlined,
-                            size: 14, color: Colors.white),
+                            size: 12, color: Colors.white),
                       ),
                     ),
                   ],
@@ -109,54 +132,140 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              const Text('Как вас зовут?', style: AppTypography.headlineMobile),
-              const SizedBox(height: 4),
-              Text('Эти данные будут видны водителю',
-                  style: AppTypography.bodyMd
-                      .copyWith(color: AppColors.textSecondary)),
-              const SizedBox(height: AppSpacing.lg),
-
               // ── Name fields ─────────────────────────────────────────
               _Field(
                 controller: _firstCtrl,
-                label: 'Имя *',
+                label: 'ИМЯ *',
                 hint: 'Арман',
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: AppSpacing.md),
               _Field(
                 controller: _lastCtrl,
-                label: 'Фамилия',
+                label: 'ФАМИЛИЯ',
                 hint: 'Муратов',
               ),
               const SizedBox(height: AppSpacing.md),
               _Field(
                 controller: _emailCtrl,
-                label: 'Email (необязательно)',
+                label: 'EMAIL',
                 hint: 'example@mail.com',
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              Text(
-                '* Обязательное поле',
-                style: AppTypography.labelMd
-                    .copyWith(color: AppColors.textSecondary, fontSize: 11),
+              // ── Role selection ──────────────────────────────────────
+              const Text(
+                'КТО ВЫ?',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.5,
+                ),
               ),
+              const SizedBox(height: 8),
+              Container(
+                height: 52,
+                decoration: BoxDecoration(
+                  color: AppColors.bgMain,
+                  borderRadius: BorderRadius.circular(AppRadii.button),
+                  border: Border.all(color: AppColors.outlineLight),
+                ),
+                child: Row(
+                  children: [
+                    _RoleTab(
+                      icon: Icons.person_outline,
+                      label: 'Пассажир',
+                      selected: _role == UserRole.passenger,
+                      onTap: () => setState(() => _role = UserRole.passenger),
+                    ),
+                    _RoleTab(
+                      icon: Icons.directions_car_outlined,
+                      label: 'Водитель',
+                      selected: _role == UserRole.driver,
+                      onTap: () => setState(() => _role = UserRole.driver),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              PrimaryActionButton(
+                label: 'Продолжить →',
+                onPressed: _canContinue ? _continue : null,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Center(
+                child: Text(
+                  '* Имя обязательно',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.page, 0, AppSpacing.page, AppSpacing.md),
-          child: _saving
-              ? const Center(child: CircularProgressIndicator())
-              : PrimaryActionButton(
-                  label: 'Продолжить →',
-                  onPressed: _canContinue ? _continue : null,
+    );
+  }
+}
+
+class _RoleTab extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _RoleTab({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.purple : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadii.button - 4),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AppColors.purple.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    )
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon,
+                  size: 16,
+                  color: selected ? Colors.white : AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected ? Colors.white : AppColors.textSecondary,
+                  fontWeight:
+                      selected ? FontWeight.w700 : FontWeight.w500,
+                  fontSize: 13,
                 ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -184,11 +293,12 @@ class _Field extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
-          style: AppTypography.labelMd.copyWith(
+          label,
+          style: const TextStyle(
             color: AppColors.textSecondary,
-            letterSpacing: 1.2,
             fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.2,
           ),
         ),
         const SizedBox(height: 6),
@@ -204,7 +314,7 @@ class _Field extends StatelessWidget {
             filled: true,
             fillColor: AppColors.bgCard,
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadii.input),
               borderSide: const BorderSide(color: AppColors.outlineLight),
@@ -215,7 +325,8 @@ class _Field extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadii.input),
-              borderSide: const BorderSide(color: AppColors.purple, width: 1.5),
+              borderSide:
+                  const BorderSide(color: AppColors.purple, width: 1.5),
             ),
           ),
         ),

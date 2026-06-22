@@ -7,8 +7,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router/routes.dart';
 import '../../core/constants/app_constants.dart';
-import 'application/user_profile_controller.dart';
 import '../../core/extensions/context_ext.dart';
+import 'application/user_profile_controller.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/widgets.dart';
@@ -83,16 +83,17 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     if (!mounted) return;
     final session = ref.read(authControllerProvider);
     if (session.hasRole) {
-      // Returning user — go straight to their home screen.
+      // Returning user — go to their home.
       context.go(AccountSession.homeRouteFor(ref));
     } else {
-      // New user — check if they already entered their name.
-      final profile = ref.read(userProfileProvider).valueOrNull;
-      if (profile != null && profile.hasName) {
-        context.go(Routes.role);
-      } else {
-        context.go(Routes.profileSetup);
-      }
+      // New user — apply role chosen in ProfileSetup, go to home.
+      final role = ref.read(selectedRoleProvider);
+      ref.read(authControllerProvider.notifier).selectRole(role);
+      AccountSession.save(ref, role: role);
+      if (!mounted) return;
+      context.go(
+        role.name == 'driver' ? Routes.kycVehicle : Routes.pHome,
+      );
     }
   }
 
