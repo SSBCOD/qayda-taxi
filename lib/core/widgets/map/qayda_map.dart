@@ -44,8 +44,9 @@ class QaydaMap extends ConsumerWidget {
           ),
           children: [
             TileLayer(
-              urlTemplate:
-                  'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+              urlTemplate: Theme.of(context).brightness == Brightness.dark
+                  ? 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
+                  : 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.example.qayda',
               tileProvider: NetworkTileProvider(),
             ),

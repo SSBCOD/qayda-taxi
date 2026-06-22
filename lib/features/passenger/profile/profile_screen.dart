@@ -8,6 +8,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/widgets/widgets.dart';
+import '../../../data/models/enums.dart';
 import '../../auth/auth.dart';
 
 /// Passenger profile + settings tab (Stitch `passenger_profile_settings_bilingual`).
@@ -166,6 +167,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
+          // ── Switch to driver ──────────────────────────────────────────
+          _SwitchRoleButton(
+            label: 'Стать водителем',
+            labelKk: 'Жүргізуші болу',
+            icon: Icons.directions_car_outlined,
+            targetRole: UserRole.driver,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
           // ── Sign out ──────────────────────────────────────────────────
           Material(
             color: scheme.errorContainer,
@@ -204,6 +214,91 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 // ─────────────────────────────────────────────────────────────────────────────
 // Grouped settings card with optional section header.
 // ─────────────────────────────────────────────────────────────────────────────
+/// Button that lets the user switch their role (passenger ↔ driver).
+/// Signs out, pre-selects the target role, and redirects to profile setup.
+class _SwitchRoleButton extends ConsumerWidget {
+  final String label;
+  final String labelKk;
+  final IconData icon;
+  final UserRole targetRole;
+
+  const _SwitchRoleButton({
+    required this.label,
+    required this.labelKk,
+    required this.icon,
+    required this.targetRole,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.primaryContainer,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => _switchRole(context, ref),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          child: Row(
+            children: [
+              Icon(icon, color: scheme.primary),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: AppTypography.bodyLg
+                            .copyWith(color: scheme.onPrimaryContainer,
+                                fontWeight: FontWeight.w700)),
+                    Text(labelKk,
+                        style: AppTypography.labelMd
+                            .copyWith(color: scheme.onPrimaryContainer
+                                .withValues(alpha: 0.7))),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios,
+                  size: 16, color: scheme.onPrimaryContainer),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _switchRole(BuildContext context, WidgetRef ref) {
+    showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(targetRole == UserRole.driver
+            ? 'Стать водителем?'
+            : 'Стать пассажиром?'),
+        content: Text(targetRole == UserRole.driver
+            ? 'Вам потребуется пройти верификацию транспортного средства и документов.\n\nЖүргізуші болу үшін авто және құжаттарды тексеру қажет.'
+            : 'Вы перейдёте в режим пассажира. Ваши данные водителя сохранятся.\n\nЖолаушы режиміне өтесіз. Жүргізуші деректері сақталады.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Отмена'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Продолжить'),
+          ),
+        ],
+      ),
+    ).then((confirmed) {
+      if (confirmed != true || !context.mounted) return;
+      // Pre-select target role and re-authenticate.
+      ref.read(selectedRoleProvider.notifier).state = targetRole;
+      ref.read(authControllerProvider.notifier).signOut();
+      // RedirectGuard will send to profileSetup (profile pre-filled).
+    });
+  }
+}
+
 class _MenuGroup extends StatelessWidget {
   final String? title;
   final List<Widget> children;

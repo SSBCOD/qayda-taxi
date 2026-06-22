@@ -10,7 +10,9 @@ import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/widgets.dart';
+import '../../../data/models/enums.dart';
 import '../../auth/application/auth_controller.dart';
+import '../../auth/application/user_profile_controller.dart';
 import 'application/driver_profile_providers.dart';
 
 /// Driver profile & settings (Stitch `driver_profile_settings`).
@@ -256,6 +258,10 @@ class DriverProfileScreen extends ConsumerWidget {
               ),
             ],
           ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // ── Switch to passenger ───────────────────────────────────────
+          _SwitchToPassengerButton(),
           const SizedBox(height: 40),
 
           // ── Sign out ──────────────────────────────────────────────────
@@ -389,6 +395,82 @@ class _StatTile extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _SwitchToPassengerButton extends ConsumerWidget {
+  const _SwitchToPassengerButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = context.colors;
+    return Material(
+      color: scheme.secondaryContainer,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => _switchRole(context, ref),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          child: Row(
+            children: [
+              Icon(Icons.person_outline, color: scheme.secondary),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Стать пассажиром',
+                      style: AppTypography.bodyLg.copyWith(
+                        color: scheme.onSecondaryContainer,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      'Жолаушы болу',
+                      style: AppTypography.labelMd.copyWith(
+                        color: scheme.onSecondaryContainer
+                            .withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios,
+                  size: 16, color: scheme.onSecondaryContainer),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _switchRole(BuildContext context, WidgetRef ref) {
+    showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Стать пассажиром?'),
+        content: const Text(
+          'Вы перейдёте в режим пассажира. Все данные водителя сохранятся — вы сможете вернуться в любой момент.\n\n'
+          'Жолаушы режиміне өтесіз. Жүргізуші деректері сақталады.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Отмена'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Продолжить'),
+          ),
+        ],
+      ),
+    ).then((confirmed) {
+      if (confirmed != true || !context.mounted) return;
+      ref.read(selectedRoleProvider.notifier).state = UserRole.passenger;
+      ref.read(authControllerProvider.notifier).signOut();
+    });
   }
 }
 
