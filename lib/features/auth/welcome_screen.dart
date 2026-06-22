@@ -280,7 +280,7 @@ class _PhoneField extends StatelessWidget {
               keyboardType: TextInputType.phone,
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[\d\-]')),
-                LengthLimitingTextInputFormatter(12),
+                LengthLimitingTextInputFormatter(13),
               ],
               style: AppTypography.headlineMd.copyWith(color: Colors.white),
               decoration: InputDecoration(
