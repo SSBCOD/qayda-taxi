@@ -90,17 +90,10 @@ class RedirectGuard {
     final loc = state.matchedLocation;
     final inAuthFlow = _authFlow.contains(loc);
 
-    // 1. Not authenticated.
+    // 1. Not authenticated → always start with profile setup so the user
+    //    can confirm/change their name and role on every login.
     if (!auth.authenticated) {
-      // 1a. No profile yet → must fill profile first.
-      if (!auth.hasProfile) {
-        final profileOk = loc == Routes.profileSetup ||
-            loc == Routes.splash ||
-            loc == Routes.language;
-        return profileOk ? null : Routes.profileSetup;
-      }
-      // 1b. Has profile → must stay inside auth flow (phone + OTP).
-      return inAuthFlow ? null : Routes.welcome;
+      return inAuthFlow ? null : Routes.profileSetup;
     }
 
     // 2. Authenticated but no role → apply selectedRole or show role screen.

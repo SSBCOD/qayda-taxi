@@ -30,16 +30,33 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   bool get _canContinue => _firstCtrl.text.trim().isNotEmpty;
 
+  bool get _isReturning => ref.read(authControllerProvider).hasProfile;
+
   @override
   void initState() {
     super.initState();
-    // Pre-fill if user already saved profile earlier.
+    // Pre-fill with existing data so returning users don't retype everything.
     final auth = ref.read(authControllerProvider);
     if (auth.hasProfile) {
       _firstCtrl.text = auth.firstName;
       _lastCtrl.text  = auth.lastName;
       _emailCtrl.text = auth.email;
+      // Restore previously chosen role.
+      final savedRole = ref.read(selectedRoleProvider);
+      _role = savedRole;
     }
+  }
+
+  Future<void> _clearAndRestart() async {
+    await ref.read(authControllerProvider.notifier).saveProfile(
+          firstName: '', lastName: '', email: '');
+    if (!mounted) return;
+    setState(() {
+      _firstCtrl.clear();
+      _lastCtrl.clear();
+      _emailCtrl.clear();
+      _role = UserRole.passenger;
+    });
   }
 
   @override
@@ -192,19 +209,37 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               const SizedBox(height: AppSpacing.lg),
 
               PrimaryActionButton(
-                label: 'Продолжить →',
+                label: _isReturning ? 'Продолжить →' : 'Зарегистрироваться →',
                 onPressed: _canContinue ? _continue : null,
               ),
               const SizedBox(height: AppSpacing.md),
-              Center(
-                child: Text(
-                  '* Имя обязательно',
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 11,
+
+              // ── Reset button for returning users ────────────────────
+              if (_isReturning)
+                Center(
+                  child: TextButton.icon(
+                    onPressed: _clearAndRestart,
+                    icon: const Icon(Icons.refresh,
+                        size: 16, color: AppColors.textSecondary),
+                    label: const Text(
+                      'Другой аккаунт / начать заново',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Center(
+                  child: const Text(
+                    '* Имя обязательно',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 11,
+                    ),
                   ),
                 ),
-              ),
               const SizedBox(height: AppSpacing.lg),
             ],
           ),
