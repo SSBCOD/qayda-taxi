@@ -26,6 +26,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final scheme = context.colors;
     final isDark = ref.watch(themeControllerProvider) == ThemeMode.dark;
+    final auth   = ref.watch(authControllerProvider);
 
     return Scaffold(
       backgroundColor: scheme.surfaceContainerLowest,
@@ -71,8 +72,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
-              const Text(
-                'Арман Муратов',
+              Text(
+                auth.displayName.isEmpty ? 'Имя не указано' : auth.displayName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
@@ -80,7 +81,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
               const SizedBox(height: 2),
               Text(
-                '+7 707 ••• •• 77',
+                auth.phone != null
+                    ? auth.phone!.replaceRange(6, auth.phone!.length - 2,
+                        '••• ••')
+                    : auth.email.isEmpty ? '' : auth.email,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTypography.bodyMd

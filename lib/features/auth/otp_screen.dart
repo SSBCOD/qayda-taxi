@@ -12,6 +12,7 @@ import 'application/user_profile_controller.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/widgets.dart';
+import '../../data/models/enums.dart';
 import '../../services/accounts/account_session.dart';
 import '../../services/notifications/otp_notification_service.dart';
 import 'application/auth_controller.dart';
@@ -81,20 +82,18 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     AccountSession.restore(ref, phone);
 
     if (!mounted) return;
-    final session = ref.read(authControllerProvider);
-    if (session.hasRole) {
-      // Returning user — go to their home.
-      context.go(AccountSession.homeRouteFor(ref));
-    } else {
-      // New user — apply role chosen in ProfileSetup, go to home.
-      final role = ref.read(selectedRoleProvider);
-      ref.read(authControllerProvider.notifier).selectRole(role);
-      AccountSession.save(ref, role: role);
-      if (!mounted) return;
-      context.go(
-        role.name == 'driver' ? Routes.kycVehicle : Routes.pHome,
-      );
-    }
+
+    // ALWAYS use the role chosen on ProfileSetupScreen.
+    // This overrides any previously-saved role so the user
+    // can switch between passenger and driver freely.
+    final chosenRole = ref.read(selectedRoleProvider);
+    ref.read(authControllerProvider.notifier).selectRole(chosenRole);
+    AccountSession.save(ref, role: chosenRole);
+
+    if (!mounted) return;
+    context.go(
+      chosenRole == UserRole.driver ? Routes.kycVehicle : Routes.pHome,
+    );
   }
 
   @override
