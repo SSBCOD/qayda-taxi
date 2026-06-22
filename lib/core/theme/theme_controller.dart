@@ -8,7 +8,7 @@ import '../../services/accounts/account_session.dart';
 /// Persisted via [AccountSession]; falls back to system before login restore.
 class ThemeController extends Notifier<ThemeMode> {
   @override
-  ThemeMode build() => ThemeMode.system;
+  ThemeMode build() => ThemeMode.dark;
 
   void setMode(ThemeMode mode) {
     state = mode;

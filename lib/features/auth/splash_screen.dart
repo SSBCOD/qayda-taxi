@@ -111,26 +111,52 @@ class _Logo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = context.colors;
-    return Container(
-      width: 128,
-      height: 128,
-      decoration: BoxDecoration(
-        color: scheme.primary,
-        borderRadius: BorderRadius.circular(36),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x33000000),
-            blurRadius: 30,
-            offset: Offset(0, 12),
+    return Column(
+      children: [
+        Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A35),
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0xFF2E2E55), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                blurRadius: 40,
+                spreadRadius: 8,
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Icon(
-        Icons.location_on,
-        size: 64,
-        color: scheme.onPrimary,
-      ),
+          child: const Icon(
+            Icons.local_taxi_rounded,
+            size: 56,
+            color: Color(0xFF8B5CF6),
+          ),
+        ),
+        const SizedBox(height: 28),
+        const Text(
+          'QAYDA',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 36,
+            fontWeight: FontWeight.w900,
+            color: Colors.white,
+            letterSpacing: 6,
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'ПРЕМИАЛЬНЫЙ СЕРВИС • КАЗАХСТАН',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF9CA3AF),
+            letterSpacing: 2.5,
+          ),
+        ),
+      ],
     );
   }
 }

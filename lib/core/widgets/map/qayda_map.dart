@@ -44,7 +44,8 @@ class QaydaMap extends ConsumerWidget {
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              urlTemplate:
+                  'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.example.qayda',
               tileProvider: NetworkTileProvider(),
             ),

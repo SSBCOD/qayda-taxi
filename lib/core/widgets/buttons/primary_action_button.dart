@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radii.dart';
+import '../../../core/theme/app_typography.dart';
 import '../common/bilingual_text.dart';
 
-/// Pure-black primary CTA with optional bilingual label and haptic feedback.
+/// Purple-gradient primary CTA button matching the Midnight design system.
 class PrimaryActionButton extends StatelessWidget {
   final String label;
   final String? labelSecondary;
@@ -18,36 +21,70 @@ class PrimaryActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return FilledButton(
-      onPressed: onPressed == null
-          ? null
-          : () {
-              HapticFeedback.mediumImpact();
-              onPressed!();
-            },
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: labelSecondary == null
-            ? Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              )
-            : BilingualText(
-                primary: label,
-                secondary: labelSecondary!,
-                primaryMaxLines: 1,
-                secondaryMaxLines: 1,
-                primaryStyle: Theme.of(context)
-                    .textTheme
-                    .headlineMedium
-                    ?.copyWith(color: scheme.onPrimary),
-                secondaryStyle:
-                    Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: scheme.onPrimary.withValues(alpha: 0.8),
-                        ),
-              ),
+    final enabled = onPressed != null;
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 200),
+      opacity: enabled ? 1.0 : 0.45,
+      child: Container(
+        height: 56,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: enabled
+              ? const LinearGradient(
+                  colors: [Color(0xFFA78BFA), AppColors.purple, AppColors.purpleDark],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : const LinearGradient(
+                  colors: [AppColors.outline, AppColors.outline],
+                ),
+          borderRadius: AppRadii.buttonRadius,
+          boxShadow: enabled
+              ? [
+                  BoxShadow(
+                    color: AppColors.purple.withValues(alpha: 0.35),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: enabled
+                ? () {
+                    HapticFeedback.mediumImpact();
+                    onPressed!();
+                  }
+                : null,
+            borderRadius: AppRadii.buttonRadius,
+            splashColor: Colors.white.withValues(alpha: 0.15),
+            child: Center(
+              child: labelSecondary == null
+                  ? Text(
+                      label,
+                      style: AppTypography.headlineMd.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    )
+                  : BilingualText(
+                      primary: label,
+                      secondary: labelSecondary!,
+                      primaryMaxLines: 1,
+                      secondaryMaxLines: 1,
+                      primaryStyle: AppTypography.headlineMd.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      secondaryStyle: AppTypography.bodyMd.copyWith(
+                        color: Colors.white.withValues(alpha: 0.75),
+                      ),
+                    ),
+            ),
+          ),
+        ),
       ),
     );
   }
