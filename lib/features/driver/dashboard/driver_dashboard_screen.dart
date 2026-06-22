@@ -51,53 +51,54 @@ class DriverDashboardScreen extends ConsumerWidget {
       body: Stack(
         children: [
           const Positioned.fill(child: QaydaMap()),
-          // Glass top header.
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.page, vertical: AppSpacing.sm),
-              child: Row(
-                children: [
-                  Builder(
-                    builder: (context) => _GlassCircleButton(
-                      icon: Icons.menu,
-                      onTap: () => Scaffold.of(context).openDrawer(),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Center(
-                      child: _StatusPill(online: state.isOnline),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  _GlassCircleButton(
-                    icon: Icons.more_vert,
-                    onTap: () => _showMore(context),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Right-side map controls — bottom right, above the sheet.
+          // ── Map controls — TOP RIGHT ─────────────────────────────────
           Positioned(
             right: AppSpacing.page,
-            bottom: 230,
+            top: MediaQuery.paddingOf(context).top + AppSpacing.sm,
             child: MapControls(
               onLayers: () {},
               onMyLocation: () =>
                   ref.read(mapControllerProvider.notifier).locateUser(),
             ),
           ),
-          // Draggable bottom sheet.
+
+          // ── Draggable bottom sheet ───────────────────────────────────
           DraggableScrollableSheet(
-            initialChildSize: 0.32,
-            minChildSize: 0.22,
-            maxChildSize: 0.65,
+            initialChildSize: 0.38,
+            minChildSize: 0.28,
+            maxChildSize: 0.70,
             snap: true,
-            snapSizes: const [0.22, 0.32, 0.65],
-            builder: (context, scrollController) =>
-                _DashboardSheet(state: state, scrollController: scrollController),
+            snapSizes: const [0.28, 0.38, 0.70],
+            builder: (context, scrollController) => _DashboardSheet(
+              state: state,
+              scrollController: scrollController,
+            ),
+          ),
+
+          // ── Status bar — BOTTOM, above the sheet ────────────────────
+          Positioned(
+            left: AppSpacing.page,
+            right: AppSpacing.page,
+            bottom: MediaQuery.sizeOf(context).height * 0.38 + AppSpacing.sm,
+            child: Row(
+              children: [
+                Builder(
+                  builder: (ctx) => _GlassCircleButton(
+                    icon: Icons.menu,
+                    onTap: () => Scaffold.of(ctx).openDrawer(),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Center(child: _StatusPill(online: state.isOnline)),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                _GlassCircleButton(
+                  icon: Icons.more_vert,
+                  onTap: () => _showMore(context),
+                ),
+              ],
+            ),
           ),
         ],
       ),
