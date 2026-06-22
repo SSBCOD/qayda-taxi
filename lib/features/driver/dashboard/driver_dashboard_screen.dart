@@ -48,44 +48,44 @@ class DriverDashboardScreen extends ConsumerWidget {
     return Scaffold(
       extendBodyBehindAppBar: true,
       drawer: const _DriverDrawer(),
-      body: Stack(
-        children: [
-          const Positioned.fill(child: QaydaMap()),
-          // ── Map controls — TOP RIGHT ─────────────────────────────────
-          Positioned(
-            right: AppSpacing.page,
-            top: MediaQuery.paddingOf(context).top + AppSpacing.sm,
-            child: MapControls(
-              onLayers: () {},
-              onMyLocation: () =>
-                  ref.read(mapControllerProvider.notifier).locateUser(),
+      // Builder gives a context that is INSIDE the Scaffold so
+      // Scaffold.of(sc) can find the drawer correctly.
+      body: Builder(
+        builder: (sc) => Stack(
+          children: [
+            const Positioned.fill(child: QaydaMap()),
+            // ── Map controls — TOP RIGHT ───────────────────────────────
+            Positioned(
+              right: AppSpacing.page,
+              top: MediaQuery.paddingOf(sc).top + AppSpacing.sm,
+              child: MapControls(
+                onLayers: () {},
+                onMyLocation: () =>
+                    ref.read(mapControllerProvider.notifier).locateUser(),
+              ),
             ),
-          ),
-
-          // ── Draggable bottom sheet (status bar is INSIDE) ───────────
-          DraggableScrollableSheet(
-            initialChildSize: 0.42,
-            minChildSize: 0.30,
-            maxChildSize: 0.85,
-            snap: true,
-            snapSizes: const [0.30, 0.42, 0.85],
-            builder: (ctx, scrollController) => _DashboardSheet(
-              state: state,
-              scrollController: scrollController,
-              onOpenDrawer: () => Scaffold.of(context).openDrawer(),
-              onMore: () => _showMore(context),
+            // ── Draggable bottom sheet (status bar INSIDE) ─────────────
+            DraggableScrollableSheet(
+              initialChildSize: 0.42,
+              minChildSize: 0.30,
+              maxChildSize: 0.85,
+              snap: true,
+              snapSizes: const [0.30, 0.42, 0.85],
+              builder: (ctx, scrollController) => _DashboardSheet(
+                state: state,
+                scrollController: scrollController,
+                onOpenDrawer: () => Scaffold.of(sc).openDrawer(),
+                onMore: () => ScaffoldMessenger.of(sc).showSnackBar(
+                  const SnackBar(content: Text('Скоро / Жақын арада')),
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  void _showMore(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Скоро / Жақын арада')),
-    );
-  }
 }
 
 class _DashboardSheet extends ConsumerWidget {
