@@ -403,10 +403,12 @@ class _PromoCard extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFFEFF6FF), Color(0xFFEEF2FF)],
+              colors: [Color(0xFF1E1235), Color(0xFF12122A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(AppRadii.card),
-            border: Border.all(color: const Color(0xFFDBEAFE)),
+            border: Border.all(color: const Color(0xFF3D3D6A)),
           ),
           child: Row(
             children: [
@@ -414,17 +416,10 @@ class _PromoCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: scheme.surfaceContainerLowest,
+                  color: const Color(0xFF2A1060),
                   borderRadius: BorderRadius.circular(AppRadii.button - 4),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x0D000000),
-                      blurRadius: 2,
-                      offset: Offset(0, 1),
-                    ),
-                  ],
                 ),
-                child: const Icon(Icons.bolt, color: _blue),
+                child: const Icon(Icons.bolt, color: Color(0xFF8B5CF6)),
               ),
               const SizedBox(width: AppSpacing.gutter),
               Expanded(
@@ -436,7 +431,7 @@ class _PromoCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.labelMd.copyWith(
-                        color: scheme.onSurface,
+                        color: Colors.white,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -446,7 +441,7 @@ class _PromoCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.bodyMd.copyWith(
-                        color: scheme.onSurfaceVariant,
+                        color: const Color(0xFF9CA3AF),
                       ),
                     ),
                   ],
@@ -454,8 +449,8 @@ class _PromoCard extends StatelessWidget {
               ),
               Container(
                 padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerLowest,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2A1060),
                   shape: BoxShape.circle,
                   boxShadow: const [
                     BoxShadow(

@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/router/routes.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/extensions/context_ext.dart';
+import '../../core/theme/app_colors.dart';
 import 'application/user_profile_controller.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
@@ -102,6 +103,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     final masked = ref.read(authControllerProvider.notifier).maskedPhone;
 
     return Scaffold(
+      backgroundColor: AppColors.bgMain,
       appBar: QaydaAppBar(
         title: 'Qayda',
         onBack: () => _back(context),

@@ -93,6 +93,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     final firstName = auth.firstName;
 
     return Scaffold(
+      backgroundColor: AppColors.bgMain,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
