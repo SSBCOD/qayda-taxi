@@ -43,17 +43,34 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     super.dispose();
   }
 
+  // Format 10 local digits as 747-123-45-67 (no leading country 7).
+  static String _fmtLocal(String raw) {
+    final b = StringBuffer();
+    for (var i = 0; i < raw.length && i < 10; i++) {
+      if (i == 3 || i == 6 || i == 8) b.write('-');
+      b.write(raw[i]);
+    }
+    return b.toString();
+  }
+
   void _onChanged(String value) {
-    final digits = KzPhone.normalizeDigits(value);
-    final formatted = KzPhone.format(digits);
+    // Keep only digits; strip a leading 7 country code if user typed it.
+    var raw = value.replaceAll(RegExp(r'\D'), '');
+    if (raw.startsWith('7') && raw.length > 10) raw = raw.substring(1);
+    if (raw.length > 10) raw = raw.substring(0, 10);
+
+    final formatted = _fmtLocal(raw);
     _controller.value = TextEditingValue(
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
     );
+
+    // Full 11-digit number for KzPhone validation (country digit + local).
+    final full = raw.isEmpty ? '' : '7$raw';
     setState(() {
-      _digits = digits;
-      _error = digits.length == KzPhone.nationalLength
-          ? KzPhone.validate(digits)
+      _digits = full;
+      _error = full.length == KzPhone.nationalLength
+          ? KzPhone.validate(full)
           : null;
     });
   }
@@ -344,7 +361,7 @@ class _PhoneField extends StatelessWidget {
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                hintText: KzPhone.placeholder,
+                hintText: '747-123-45-67',
                 hintStyle: AppTypography.headlineMd
                     .copyWith(color: AppColors.textSecondary),
               ),

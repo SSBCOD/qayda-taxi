@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -145,58 +144,19 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                 ),
               ),
               const Spacer(),
-              if (kDebugMode)
-                GestureDetector(
-                  onTap: () {
-                    final otp = ref
-                        .read(authControllerProvider.notifier)
-                        .debugOtp;
-                    Clipboard.setData(ClipboardData(text: otp));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Код скопирован: $otp'),
-                        duration: const Duration(seconds: 3),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.sm,
+              // ── OTP code display card ───────────────────────────────────
+              _OtpCodeCard(
+                getCode: () =>
+                    ref.read(authControllerProvider.notifier).debugOtp,
+                onCopy: (otp) {
+                  Clipboard.setData(ClipboardData(text: otp));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Код скопирован: $otp'),
+                      duration: const Duration(seconds: 2),
                     ),
-                    decoration: BoxDecoration(
-                      color: scheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.developer_mode,
-                            size: 16, color: scheme.onPrimaryContainer),
-                        const SizedBox(width: 6),
-                        Text(
-                          'DEV: ${ref.watch(authControllerProvider.notifier).debugOtp}',
-                          style: AppTypography.labelMd.copyWith(
-                            color: scheme.onPrimaryContainer,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Icon(Icons.copy, size: 14, color: scheme.onPrimaryContainer),
-                      ],
-                    ),
-                  ),
-                ),
-              Center(
-                child: Text(
-                  'Код придёт в уведомлении / Код хабарландыруда келеді',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.labelMd
-                      .copyWith(color: scheme.onSurfaceVariant),
-                ),
+                  );
+                },
               ),
               const SizedBox(height: AppSpacing.lg),
             ],
@@ -213,6 +173,84 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       context.go(Routes.welcome);
     }
   }
+}
+
+/// Big visible OTP code card — replaces the hidden DEV badge.
+class _OtpCodeCard extends StatelessWidget {
+  final String Function() getCode;
+  final void Function(String) onCopy;
+
+  const _OtpCodeCard({required this.getCode, required this.onCopy});
+
+  @override
+  Widget build(BuildContext context) {
+    final code = getCode();
+    return GestureDetector(
+      onTap: () => onCopy(code),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1235),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF8B5CF6).withValues(alpha: 0.25),
+              blurRadius: 24,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.sms_outlined, size: 18, color: Color(0xFF8B5CF6)),
+                const SizedBox(width: 8),
+                Text(
+                  'Qayda — код подтверждения',
+                  style: const TextStyle(
+                    color: Color(0xFF9CA3AF),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _spaced(code),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 40,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 8,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.touch_app_outlined, size: 14, color: Color(0xFF8B5CF6)),
+                SizedBox(width: 4),
+                Text(
+                  'Нажмите чтобы скопировать',
+                  style: TextStyle(
+                    color: Color(0xFF8B5CF6),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _spaced(String s) => s.split('').join(' ');
 }
 
 class _ResendControl extends StatelessWidget {
