@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/router/routes.dart';
 import '../../../core/extensions/context_ext.dart';
+import '../../../core/utils/launcher.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
@@ -41,7 +42,7 @@ class RideActiveScreen extends ConsumerWidget {
         subtitle: 'Сапар үстінде',
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () => Launcher.sos(context),
             icon: Icon(Icons.sos, color: context.colors.error),
           ),
         ],
@@ -217,19 +218,24 @@ class _ActiveSheet extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: _NeutralAction(
-                            icon: Icons.call, label: 'Звонок', onTap: () {}),
+                            icon: Icons.call,
+                            label: 'Звонок',
+                            onTap: () => Launcher.call(
+                                context, driver?.phone ?? '+77000000000')),
                       ),
                       Expanded(
                         child: _NeutralAction(
                             icon: Icons.chat_bubble_outline,
                             label: 'Чат',
-                            onTap: () {}),
+                            onTap: () => context.push(Routes.supportChat)),
                       ),
                       Expanded(
                         child: _NeutralAction(
                             icon: Icons.ios_share,
                             label: 'Поделиться',
-                            onTap: () {}),
+                            onTap: () => ScaffoldMessenger.of(context)
+                                .showSnackBar(const SnackBar(
+                                    content: Text('Ссылка скопирована')))),
                       ),
                     ],
                   ),
@@ -237,7 +243,7 @@ class _ActiveSheet extends ConsumerWidget {
                   SecondaryButton(
                     label: 'Safety / Қауіпсіздік',
                     icon: Icons.security,
-                    onPressed: () {},
+                    onPressed: () => Launcher.sos(context),
                   ),
                 ],
               ),

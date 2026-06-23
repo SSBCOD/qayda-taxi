@@ -75,11 +75,17 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     setState(() => _submitting = true);
     try {
       final e164 = KzPhone.toE164(_digits);
-      final otp  = ref.read(authControllerProvider.notifier).requestOtp(e164);
-      await OtpNotificationService.showOtp(
-        maskedPhone: KzPhone.mask(_digits),
-        code: otp,
-      );
+      // requestOtp is now async — returns mock code or null (Firebase SMS).
+      final mockCode = await ref
+          .read(authControllerProvider.notifier)
+          .requestOtp(e164);
+      if (mockCode != null && mockCode.isNotEmpty) {
+        // Debug/Windows: show mock code in notification.
+        await OtpNotificationService.showOtp(
+          maskedPhone: KzPhone.mask(_digits),
+          code: mockCode,
+        );
+      }
       if (mounted) context.go(Routes.otp);
     } finally {
       if (mounted) setState(() => _submitting = false);

@@ -12,6 +12,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/widgets.dart';
 import '../dashboard/application/driver_controller.dart';
+import '../../../core/utils/launcher.dart';
 
 /// Passenger boarding / verification (Stitch `passenger_boarding_verification`).
 ///
@@ -283,7 +284,7 @@ class _DriverBoardingScreenState extends ConsumerState<DriverBoardingScreen> {
                       label: 'Чат',
                       icon: Icons.chat_bubble_outline,
                       expanded: false,
-                      onPressed: () {},
+                      onPressed: () => context.push(Routes.supportChat),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.gutter),
@@ -292,7 +293,7 @@ class _DriverBoardingScreenState extends ConsumerState<DriverBoardingScreen> {
                       label: 'Звонок',
                       icon: Icons.call,
                       expanded: false,
-                      onPressed: () {},
+                      onPressed: () => Launcher.call(context, '+77000000000'),
                     ),
                   ),
                 ],

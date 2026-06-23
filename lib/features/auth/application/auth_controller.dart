@@ -1,9 +1,11 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/phone/kz_phone.dart';
 import '../../../data/models/enums.dart';
+import '../../../services/auth/firebase_auth_service.dart';
 import '../../../services/storage/prefs_service.dart';
 
 class AuthSession {
@@ -13,6 +15,7 @@ class AuthSession {
   final String firstName;
   final String lastName;
   final String email;
+  final String? firebaseUid;
 
   const AuthSession({
     this.authenticated = false,
@@ -21,32 +24,34 @@ class AuthSession {
     this.firstName = '',
     this.lastName = '',
     this.email = '',
+    this.firebaseUid,
   });
 
-  bool get hasRole => role != null;
+  bool get hasRole    => role != null;
   bool get hasProfile => firstName.trim().isNotEmpty;
+
   String get displayName {
     final l = lastName.trim();
     return l.isEmpty ? firstName.trim() : '${firstName.trim()} $l';
   }
 
   AuthSession copyWith({
-    bool? authenticated,
-    String? phone,
+    bool?     authenticated,
+    String?   phone,
     UserRole? role,
-    String? firstName,
-    String? lastName,
-    String? email,
-  }) {
-    return AuthSession(
-      authenticated: authenticated ?? this.authenticated,
-      phone: phone ?? this.phone,
-      role: role ?? this.role,
-      firstName: firstName ?? this.firstName,
-      lastName: lastName ?? this.lastName,
-      email: email ?? this.email,
-    );
-  }
+    String?   firstName,
+    String?   lastName,
+    String?   email,
+    String?   firebaseUid,
+  }) => AuthSession(
+    authenticated: authenticated ?? this.authenticated,
+    phone:         phone         ?? this.phone,
+    role:          role          ?? this.role,
+    firstName:     firstName     ?? this.firstName,
+    lastName:      lastName      ?? this.lastName,
+    email:         email         ?? this.email,
+    firebaseUid:   firebaseUid   ?? this.firebaseUid,
+  );
 }
 
 class AuthController extends Notifier<AuthSession> {
@@ -55,12 +60,17 @@ class AuthController extends Notifier<AuthSession> {
   static const _kEmail = 'profile_email';
 
   String _pendingPhone = '';
-  String _pendingOtp   = '';
+  String _pendingOtp   = '';          // used only in mock/debug mode
+  String _verificationId = '';        // Firebase web/mobile
   final _random = Random();
+
+  // Use Firebase on web/mobile; fall back to mock on Windows & pure debug.
+  static bool get _useFirebase =>
+      !(!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.windows);
 
   @override
   AuthSession build() {
-    // Restore profile from SharedPreferences synchronously on every build.
     final prefs = ref.read(prefsServiceProvider);
     return AuthSession(
       firstName: prefs.getString(_kFirst) ?? '',
@@ -68,6 +78,8 @@ class AuthController extends Notifier<AuthSession> {
       email:     prefs.getString(_kEmail) ?? '',
     );
   }
+
+  // ── Profile ────────────────────────────────────────────────────────────────
 
   Future<void> saveProfile({
     required String firstName,
@@ -87,40 +99,86 @@ class AuthController extends Notifier<AuthSession> {
     );
   }
 
-  String requestOtp(String phoneE164) {
+  // ── OTP ───────────────────────────────────────────────────────────────────
+
+  /// Sends an OTP. Returns the mock code on debug/Windows (show to user),
+  /// or null on Firebase (real SMS sent).
+  Future<String?> requestOtp(String phoneE164) async {
     _pendingPhone = phoneE164;
-    _pendingOtp   = _generateOtp();
     state = state.copyWith(phone: phoneE164);
-    return _pendingOtp;
+
+    if (!_useFirebase) {
+      // Mock mode (Windows desktop / debug).
+      _pendingOtp = _generateOtp();
+      debugPrint('[OTP-MOCK] Code for $phoneE164: $_pendingOtp');
+      return _pendingOtp;
+    }
+
+    // Firebase mode.
+    _pendingOtp = '';
+    final error = await FirebaseAuthService.sendOtp(
+      phoneE164: phoneE164,
+      onCodeSent: (vid) => _verificationId = vid,
+      onError: (e) => debugPrint('[Firebase Auth Error] ${e.message}'),
+    );
+    if (error != null) debugPrint('[OTP Error] $error');
+    return null; // real SMS sent — no code to show
   }
 
   String resendOtp() {
     if (_pendingPhone.isEmpty) return '';
-    _pendingOtp = _generateOtp();
-    return _pendingOtp;
+    if (!_useFirebase) {
+      _pendingOtp = _generateOtp();
+      return _pendingOtp;
+    }
+    // Re-trigger Firebase (fire-and-forget).
+    requestOtp(_pendingPhone);
+    return '';
   }
+
+  /// Verifies the entered [code]. Returns true on success.
+  Future<bool> verifyOtp(String code) async {
+    if (!_useFirebase) {
+      // Mock verification.
+      final ok = code == _pendingOtp;
+      if (ok) state = state.copyWith(authenticated: true, phone: _pendingPhone);
+      return ok;
+    }
+
+    // Firebase verification.
+    final uid = await FirebaseAuthService.verifyOtp(
+      verificationId: _verificationId,
+      smsCode: code,
+    );
+    if (uid == null) return false;
+    state = state.copyWith(
+      authenticated: true,
+      phone: _pendingPhone,
+      firebaseUid: uid,
+    );
+    return true;
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   String get maskedPhone {
     final digits = _pendingPhone.replaceAll(RegExp(r'\D'), '');
     return KzPhone.mask(digits);
   }
 
-  String get pendingPhone  => _pendingPhone;
-  String get debugOtp      => _pendingOtp;
+  String get pendingPhone => _pendingPhone;
 
-  bool verifyOtp(String code) {
-    final ok = code == _pendingOtp;
-    if (ok) state = state.copyWith(authenticated: true, phone: _pendingPhone);
-    return ok;
-  }
+  /// Debug-only: returns the mock OTP (empty when Firebase is active).
+  String get debugOtp => _pendingOtp;
 
-  void selectRole(UserRole role) => state = state.copyWith(role: role);
+  void selectRole(UserRole role)  => state = state.copyWith(role: role);
   void restoreRole(UserRole role) => state = state.copyWith(role: role);
 
   void signOut() {
-    _pendingPhone = '';
-    _pendingOtp   = '';
-    // Keep firstName/lastName/email — user shouldn't re-enter profile on next login.
+    _pendingPhone    = '';
+    _pendingOtp      = '';
+    _verificationId  = '';
+    if (_useFirebase) FirebaseAuthService.signOut();
     state = AuthSession(
       firstName: state.firstName,
       lastName:  state.lastName,

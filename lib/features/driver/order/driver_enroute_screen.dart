@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/extensions/context_ext.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/utils/launcher.dart';
+import '../../../app/router/routes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/widgets.dart';
@@ -191,7 +194,7 @@ class _EnrouteSheet extends ConsumerWidget {
                         icon: Icons.sos,
                         color: scheme.error,
                         background: scheme.error.withValues(alpha: 0.1),
-                        onTap: () {},
+                        onTap: () => Launcher.sos(context),
                       ),
                     ],
                   ),
@@ -229,7 +232,7 @@ class _EnrouteSheet extends ConsumerWidget {
                         icon: Icons.chat_bubble_outline,
                         color: scheme.primary,
                         background: scheme.surfaceContainerHigh,
-                        onTap: () {},
+                        onTap: () => context.push(Routes.supportChat),
                       ),
                     ],
                   ),
@@ -241,7 +244,7 @@ class _EnrouteSheet extends ConsumerWidget {
                           label: 'Позвонить / Хабарласу',
                           icon: Icons.call,
                           expanded: false,
-                          onPressed: () {},
+                          onPressed: () => Launcher.call(context, '+77000000000'),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.gutter),

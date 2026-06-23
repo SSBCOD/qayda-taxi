@@ -60,18 +60,18 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   Future<void> _resend() async {
     final auth = ref.read(authControllerProvider.notifier);
     final otp = auth.resendOtp();
-    if (otp.isEmpty) return;
-
-    await OtpNotificationService.showOtp(
-      maskedPhone: auth.maskedPhone,
-      code: otp,
-    );
+    if (otp.isNotEmpty) {
+      await OtpNotificationService.showOtp(
+        maskedPhone: auth.maskedPhone,
+        code: otp,
+      );
+    }
     _startCountdown();
   }
 
-  void _onCompleted(String code) {
+  Future<void> _onCompleted(String code) async {
     final auth = ref.read(authControllerProvider.notifier);
-    final ok = auth.verifyOtp(code);
+    final ok = await auth.verifyOtp(code);
     if (!ok) {
       setState(() => _error = true);
       HapticFeedback.heavyImpact();

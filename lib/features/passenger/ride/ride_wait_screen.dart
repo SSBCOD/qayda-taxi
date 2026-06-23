@@ -11,6 +11,7 @@ import '../../../data/models/enums.dart';
 import '../../../data/models/ride.dart';
 import '../../ride/application/ride_controller.dart';
 import '../../ride/map/map_controller.dart';
+import '../../../core/utils/launcher.dart';
 
 /// Driver-search / wait screen.
 ///
@@ -45,7 +46,7 @@ class RideWaitScreen extends ConsumerWidget {
         onBack: () => _confirmCancel(context, ref),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () => context.push(Routes.settings),
             icon: const Icon(Icons.more_vert),
           ),
         ],
@@ -233,7 +234,7 @@ class _DriverSheet extends ConsumerWidget {
                   label: 'Звонок',
                   color: const Color(0xFF16A34A),
                   background: const Color(0xFFF0FDF4),
-                  onTap: () {},
+                  onTap: () => Launcher.call(context, ride.driver?.phone ?? '+77000000000'),
                 ),
               ),
               Expanded(
@@ -242,7 +243,7 @@ class _DriverSheet extends ConsumerWidget {
                   label: 'Чат',
                   color: scheme.primary,
                   background: scheme.surfaceContainerHigh,
-                  onTap: () {},
+                  onTap: () => context.push(Routes.supportChat),
                 ),
               ),
               Expanded(
